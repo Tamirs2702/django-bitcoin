@@ -47,13 +47,13 @@ def query_transactions():
         transactions = bitcoind.bitcoind_api.listsinceblock(blockhash)
         # print transactions
         transactions = [tx for tx in transactions["transactions"] if tx["category"]=="receive"]
-        print transactions
+        print (transactions)
         for tx in transactions:
             ba = BitcoinAddress.objects.filter(address=tx[u'address'])
             if ba.count() > 1:
                 raise Exception(u"Too many addresses!")
             if ba.count() == 0:
-                print "no address found, address", tx[u'address']
+                print ("no address found, address", tx[u'address'])
                 continue
             ba = ba[0]
             dps = DepositTransaction.objects.filter(txid=tx[u'txid'], amount=tx['amount'], address=ba)
@@ -76,9 +76,9 @@ def query_transactions():
                 if int(tx['confirmations']) > deposit_tx.confirmations:
                     DepositTransaction.objects.filter(id=deposit_tx.id).update(confirmations=int(tx['confirmations']))
             elif dps.count() == 1:
-                print "already processed", dps[0].txid, dps[0].transaction
+                print ("already processed", dps[0].txid, dps[0].transaction)
             else:
-                print "FUFFUFUU"
+                print ("FUFFUFUU")
 
         cache.set("queried_block_index", max_query_block)
 
@@ -99,33 +99,33 @@ def check_integrity():
 
     bitcoinaddress_sum = BitcoinAddress.objects.filter(active=True)\
         .aggregate(Sum('least_received_confirmed'))['least_received_confirmed__sum'] or Decimal(0)
-    print "Total received, sum", bitcoinaddress_sum
+    print ("Total received, sum", bitcoinaddress_sum)
     transaction_wallets_sum = WalletTransaction.objects.filter(from_wallet__id__gt=0, to_wallet__id__gt=0)\
         .aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
-    print "Total transactions, sum", transaction_wallets_sum
+    print ("Total transactions, sum", transaction_wallets_sum)
     transaction_out_sum = WalletTransaction.objects.filter(from_wallet__id__gt=0)\
         .exclude(to_bitcoinaddress="").exclude(to_bitcoinaddress="")\
         .aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
-    print "Total outgoing, sum", transaction_out_sum
+    print ("Total outgoing, sum", transaction_out_sum)
     # for x in WalletTransaction.objects.filter(from_wallet__id__gt=0, to_wallet__isnull=True, to_bitcoinaddress=""):
     #   print x.amount, x.created_at
     fee_sum = WalletTransaction.objects.filter(from_wallet__id__gt=0, to_wallet__isnull=True, to_bitcoinaddress="")\
         .aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
-    print "Fees, sum", fee_sum
-    print "DB balance", (bitcoinaddress_sum - transaction_out_sum - fee_sum)
-    print "----"
+    print ("Fees, sum", fee_sum)
+    print ("DB balance", (bitcoinaddress_sum - transaction_out_sum - fee_sum))
+    print ("----")
     bitcoind_balance = bitcoind.bitcoind_api.getbalance()
-    print "Bitcoind balance", bitcoind_balance
-    print "----"
-    print "Wallet quick check"
+    print ("Bitcoind balance", bitcoind_balance)
+    print ("----")
+    print ("Wallet quick check")
     total_sum = Decimal(0)
     for w in Wallet.objects.filter(last_balance__lt=0):
         if w.total_balance()<0:
             bal = w.total_balance()
-            # print w.id, bal
+            # print w.id, bal()
             total_sum += bal
-    print "Negatives:", Wallet.objects.filter(last_balance__lt=0).count(), "Amount:", total_sum
-    print "Migration check"
+    print ("Negatives:", Wallet.objects.filter(last_balance__lt=0).count(), "Amount:", total_sum)
+    print ("Migration check")
     tot_received = WalletTransaction.objects.filter(from_wallet=None).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
     tot_received_bitcoinaddress = BitcoinAddress.objects.filter(migrated_to_transactions=True)\
         .aggregate(Sum('least_received_confirmed'))['least_received_confirmed__sum'] or Decimal(0)

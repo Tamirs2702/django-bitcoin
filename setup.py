@@ -5,7 +5,7 @@ template_patterns = ['templates/*.html',
                      'templates/*/*.html',
                      'templates/*/*/*.html',
                      ]
-
+                        
 package_name = 'django-bitcoin'
 packages = ['django_bitcoin',
             'django_bitcoin.management',
